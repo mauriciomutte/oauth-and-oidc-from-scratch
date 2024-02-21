@@ -1,6 +1,7 @@
 import express from 'express'
 import bodyParser from 'body-parser'
 import crypto from 'node:crypto'
+import consolidate from 'consolidate'
 
 import { authServer } from './lib/auth-server.js'
 import { client } from './lib/clients.js'
@@ -9,6 +10,10 @@ const app = express()
 
 app.use(bodyParser.json())
 app.use(bodyParser.urlencoded({ extended: true }))
+
+app.engine('html', consolidate.underscore)
+app.set('view engine', 'html')
+app.set('views', 'src/views/client')
 
 // protected resource information
 const protectedResourseEndpoint = 'http://localhost:9002/resource'
@@ -20,6 +25,10 @@ function generateRandomString() {
 let state = null
 let access_token = null
 let scope = null
+
+app.get('/', (req, res) => {
+  res.render('index', { access_token, scope })
+})
 
 app.get('/authorize', (req, res) => {
   access_token = null
