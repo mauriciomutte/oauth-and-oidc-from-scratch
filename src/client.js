@@ -21,7 +21,22 @@ let state = null
 let access_token = null
 let scope = null
 
-app.get('/authorize', (req, res) => {})
+app.get('/authorize', (req, res) => {
+  access_token = null
+  scope = null
+  state = generateRandomString()
+
+  // mount redirect URL to Authorization Server
+  const authorizeUrl = new URL(authServer.authorizationEndpoint)
+  authorizeUrl.searchParams.append('response_type', 'code')
+  authorizeUrl.searchParams.append('client_id', client.client_id)
+  authorizeUrl.searchParams.append('redirect_uri', client.redirect_uris[0])
+  authorizeUrl.searchParams.append('scope', client.scope)
+  authorizeUrl.searchParams.append('state', state)
+
+  console.log('Redirecting to:', authorizeUrl.toString())
+  res.redirect(authorizeUrl)
+})
 
 app.get('/callback', (req, res) => {})
 
