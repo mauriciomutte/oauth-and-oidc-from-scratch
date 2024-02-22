@@ -4,7 +4,7 @@ import consolidate from 'consolidate'
 
 import { authServer } from './lib/auth-server.js'
 import { client } from './lib/clients.js'
-import { generateRandomString } from './lib/utils.js'
+import { generateRandomString, buildURL } from './lib/utils.js'
 
 const app = express()
 
@@ -31,14 +31,14 @@ app.get('/authorize', (req, res) => {
   scope = null
   state = generateRandomString()
 
-  // mount redirect URL to Authorization Server
-  const authorizeUrl = new URL(authServer.authorizationEndpoint)
-  authorizeUrl.searchParams.append('response_type', 'code')
-  authorizeUrl.searchParams.append('client_id', client.client_id)
-  authorizeUrl.searchParams.append('redirect_uri', client.redirect_uris[0])
-  authorizeUrl.searchParams.append('scope', client.scope)
-  authorizeUrl.searchParams.append('state', state)
-
+  // mount redirect URL and redirect to Authorization Server (Front Channel Flow)
+  const authorizeUrl = buildURL(authServer.authorizationEndpoint, {
+    response_type: 'code',
+    client_id: client.client_id,
+    redirect_uri: client.redirect_uris[0],
+    scope: client.scope,
+    state,
+  })
   console.log('Redirecting to:', authorizeUrl.toString())
   res.redirect(authorizeUrl)
 })
