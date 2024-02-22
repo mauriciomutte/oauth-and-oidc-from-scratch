@@ -1,10 +1,10 @@
 import express from 'express'
 import bodyParser from 'body-parser'
-import crypto from 'node:crypto'
 import consolidate from 'consolidate'
 
 import { authServer } from './lib/auth-server.js'
 import { client } from './lib/clients.js'
+import { generateRandomString } from './lib/utils.js'
 
 const app = express()
 
@@ -17,10 +17,6 @@ app.set('views', 'src/views/client')
 
 // protected resource information
 const protectedResourseEndpoint = 'http://localhost:9002/resource'
-
-function generateRandomString() {
-  return crypto.randomBytes(16).toString('hex')
-}
 
 let state = null
 let access_token = null
