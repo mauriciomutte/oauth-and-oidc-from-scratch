@@ -42,6 +42,10 @@
     <div class="container">
       <div class="jumbotron">
         <p>
+          Authorization Code:
+          <span class="label label-danger"><%- code ? code : 'NONE' %></span>
+        </p>
+        <p>
           Access token value:
           <span class="label label-danger"
             ><%- access_token ? access_token : 'NONE' %></span
@@ -51,7 +55,8 @@
           Scope value:
           <span class="label label-danger"><%- scope ? scope : 'NONE' %></span>
         </p>
-        <a class="btn btn-default" href="/authorize">Get OAuth Token</a>
+        <a class="btn btn-default" href="/authorize">Get Authorization Code</a>
+        <a class="btn btn-default" href="/exchange-code">Exchange</a>
         <a class="btn btn-default" href="/fetch_resource"
           >Get Protected Resource</a
         >

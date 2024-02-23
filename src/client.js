@@ -18,12 +18,13 @@ app.set('views', 'src/views/client')
 // protected resource information
 const protectedResourseEndpoint = 'http://localhost:9002/resource'
 
+let code = null
 let state = null
 let access_token = null
 let scope = null
 
 app.get('/', (req, res) => {
-  res.render('index', { access_token, scope })
+  res.render('index', { code, access_token, scope })
 })
 
 app.get('/authorize', (req, res) => {
@@ -57,7 +58,47 @@ app.get('/callback', (req, res) => {
   }
 
   code = req.query.code
-  res.render('index', { access_token, scope })
+  res.render('index', { code, access_token, scope })
+})
+
+app.get('/exchange-code', (req, res) => {
+  if (!code) {
+    res.render('error', { error: 'Missing authorization code' })
+    return
+  }
+
+  const formData = {
+    code,
+    grant_type: 'authorization_code',
+    redirect_uri: client.redirect_uris[0],
+  }
+
+  const headers = {
+    Authorization: `Basic ${Buffer.from(
+      `${client.client_id}:${client.client_secret}`
+    ).toString('base64')}`,
+    'Content-Type': 'application/x-www-form-urlencoded',
+  }
+
+  fetch(authServer.tokenEndpoint, {
+    method: 'POST',
+    body: new URLSearchParams(formData),
+    headers,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      console.log('Access token:', data)
+      code = null
+      access_token = data.access_token
+      scope = data.scope
+      res.render('index', { code, access_token, scope })
+    })
+    .catch((error) => {
+      console.error('Error:', error)
+      res.render('error', {
+        error,
+      })
+    })
 })
 
 app.get('/fetch_resource', (req, res) => {})
