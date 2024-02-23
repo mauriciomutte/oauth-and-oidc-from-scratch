@@ -4,7 +4,7 @@ import consolidate from 'consolidate'
 
 import { authServer } from './lib/auth-server.js'
 import { allClients } from './lib/clients.js'
-import { generateRandomString } from './lib/utils.js'
+import { generateRandomString, buildURL } from './lib/utils.js'
 
 const app = express()
 
@@ -45,7 +45,45 @@ app.get('/authorize', (req, res) => {
   res.render('approve', { client: client, reqid: reqid })
 })
 
-app.post('/approve', (req, res) => {})
+app.post('/approve', (req, res) => {
+  const reqid = req.body.reqid
+  const query = requests[reqid]
+  delete requests[reqid]
+
+  // there was no matching saved request, this is an error
+  if (!query) {
+    res.render('error', { error: 'No matching authorization request' })
+    return
+  }
+
+  // if the user clicked 'Deny', there will be no 'approve' field
+  // it should redirect back to client with an error
+  if (!req.body.approve) {
+    const urlToRedirect = buildURL(query.redirect_uri, {
+      error: 'access_denied',
+    })
+    res.redirect(urlToRedirect)
+    return
+  }
+
+  // for this example, only support authorization code grant
+  if (query.response_type !== 'code') {
+    const urlToRedirect = buildURL(query.redirect_uri, {
+      error: 'unsupported_response_type',
+    })
+    res.redirect(urlToRedirect)
+    return
+  }
+
+  const code = generateRandomString()
+  codes[code] = { request: query }
+
+  const successRedirectURL = buildURL(query.redirect_uri, {
+    code,
+    state: query.state,
+  })
+  res.redirect(successRedirectURL)
+})
 
 app.post('/token', (req, res) => {})
 
