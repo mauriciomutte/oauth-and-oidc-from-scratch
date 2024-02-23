@@ -4,6 +4,7 @@ import consolidate from 'consolidate'
 
 import { authServer } from './lib/auth-server.js'
 import { allClients } from './lib/clients.js'
+import { generateRandomString } from './lib/utils.js'
 
 const app = express()
 
@@ -22,7 +23,27 @@ function getClient(clientId) {
 let codes = []
 let requests = []
 
-app.get('/authorize', (req, res) => {})
+app.get('/authorize', (req, res) => {
+  const clientId = req.query.client_id
+  const redirectUri = req.query.redirect_uri
+
+  const client = getClient(clientId)
+  if (!client) {
+    res.render('error', { error: 'Unknown client' })
+    return
+  }
+
+  const hasClientRedirectUri = client.redirect_uris.includes(redirectUri)
+  if (!hasClientRedirectUri) {
+    res.render('error', { error: 'Invalid redirect URI' })
+    return
+  }
+
+  const reqid = generateRandomString(8)
+  requests[reqid] = req.query
+
+  res.render('approve', { client: client, reqid: reqid })
+})
 
 app.post('/approve', (req, res) => {})
 
