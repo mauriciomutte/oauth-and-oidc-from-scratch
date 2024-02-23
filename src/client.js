@@ -101,7 +101,30 @@ app.get('/exchange-code', (req, res) => {
     })
 })
 
-app.get('/fetch_resource', (req, res) => {})
+app.get('/fetch-resource', (req, res) => {
+  if (!access_token) {
+    res.render('error', { error: 'Missing access token' })
+    return
+  }
+
+  const headers = {
+    Authorization: `Bearer ${access_token}`,
+    'Content-Type': 'application/x-www-form-urlencoded',
+  }
+
+  fetch(protectedResourseEndpoint, {
+    headers,
+  })
+    .then((response) => response.json())
+    .then((data) => {
+      res.render('data', { resource: data })
+    })
+    .catch((error) => {
+      access_token = null
+      console.error('Error:', error)
+      res.render('error', { error })
+    })
+})
 
 app.listen(9000, 'localhost', () => {
   console.log('Client is running on port 9000')
