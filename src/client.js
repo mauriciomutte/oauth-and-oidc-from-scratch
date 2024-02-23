@@ -43,7 +43,22 @@ app.get('/authorize', (req, res) => {
   res.redirect(authorizeUrl)
 })
 
-app.get('/callback', (req, res) => {})
+app.get('/callback', (req, res) => {
+  const error = req.query.error
+  if (error) {
+    res.render('error', { error })
+    return
+  }
+
+  const responseState = req.query.state
+  if (responseState !== state) {
+    res.render('error', { error: 'State value does not match' })
+    return
+  }
+
+  code = req.query.code
+  res.render('index', { access_token, scope })
+})
 
 app.get('/fetch_resource', (req, res) => {})
 
