@@ -20,6 +20,13 @@ function getClient(clientId) {
   return allClients.find((client) => client.client_id === clientId)
 }
 
+function decodeClientCredential(authorization) {
+  const token = authorization.split(' ')[1]
+  const buffer = Buffer.from(token, 'base64')
+  const [clientId, clientSecret] = buffer.toString().split(':')
+  return { clientId, clientSecret }
+}
+
 let codes = []
 let requests = []
 
@@ -85,7 +92,42 @@ app.post('/approve', (req, res) => {
   res.redirect(successRedirectURL)
 })
 
-app.post('/token', (req, res) => {})
+app.post('/token', (req, res) => {
+  const auth = req.headers.authorization
+
+  const { clientId, clientSecret } = decodeClientCredential(auth)
+  const client = getClient(clientId)
+  if (!client || client?.client_secret !== clientSecret) {
+    console.log('Unknown client', clientId)
+    res.status(401).json({ error: 'invalid client' })
+    return
+  }
+
+  if (req.body.grant_type !== 'authorization_code') {
+    res.status(400).json({ error: 'invalid_grant' })
+    return
+  }
+
+  const code = codes[req.body.code]
+  if (!code) {
+    res.status(400).json({ error: 'invalid_grant' })
+    return
+  }
+  delete codes[req.body.code]
+
+  if (code.request.client_id !== clientId) {
+    res.status(400).json({ error: 'invalid_grant' })
+    return
+  }
+
+  const accessToken = generateRandomString()
+  // TODO: insert access token into DB
+  const tokenResponse = {
+    access_token: accessToken,
+    token_type: 'Bearer',
+  }
+  res.status(200).json(tokenResponse)
+})
 
 app.listen(9001, 'localhost', () => {
   console.log('OAuth Authorization server is running on port 9001')
